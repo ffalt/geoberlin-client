@@ -1,0 +1,9 @@
+{
+  "name": "geoberlin-client",
+  "version": "0.0.1",
+  "description": "JavaScript client library & Leaflet Plugin for the Geoberlin Berlin Geocoder",
+  "main": [],
+  "ignore": [
+    ".*"
+  ]
+}
