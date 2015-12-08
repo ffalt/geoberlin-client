@@ -220,12 +220,6 @@ span.leaflet-geocoderui-layer-icon-container {
   bottom: 50px;
 }
 
-.leaflet-geocoderui-result-distance {
-  position: absolute;
-  right:6px;
-  font-size: 0.8em;
-}
-
 .leaflet-geocoderui-list {
   list-style: none;
   margin: 0;
@@ -286,4 +280,18 @@ span.leaflet-geocoderui-layer-icon-container {
 
 .leaflet-bar.with-locate .leaflet-geocoderui-input {
   padding-left:48px
+}
+
+.leaflet-geocoderui-result-distance {
+  position: absolute;
+  left: 4px;
+  font-size: 0.8em;
+  padding-top: 3px;
+}
+
+.leaflet-geocoderui-result-with-distance .leaflet-geocoderui-layer-icon {
+  margin-left: 24px;
+}
+.leaflet-geocoderui-result-with-distance span.leaflet-geocoderui-layer-icon-container {
+  margin-right: 2px;
 }

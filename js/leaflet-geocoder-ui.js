@@ -256,7 +256,7 @@
 
 			for (var i = 0, j = features.length; i < j; i++) {
 				var feature = features[i];
-				var resultItem = L.DomUtil.create('li', 'leaflet-geocoderui-result', list);
+				var resultItem = L.DomUtil.create('li', 'leaflet-geocoderui-result'+(feature.properties.distance > 0?' leaflet-geocoderui-result-with-distance':''), list);
 
 				resultItem.layer = feature.properties.layer;
 				resultItem.coords = feature.geometry.coordinates;
@@ -271,10 +271,11 @@
 					layerIcon.title = 'layer: ' + feature.properties.layer;
 				}
 
+				var contentContainer = L.DomUtil.create('span', 'leaflet-geocoderui-layer-content-container', resultItem);
 				if (this._input.value.length > 0) {
-					resultItem.innerHTML += this.highlight(feature.properties.label, this._input.value);
+					contentContainer.innerHTML = this.highlight(feature.properties.label, this._input.value);
 				} else {
-					resultItem.innerHTML += feature.properties.label;
+					contentContainer.innerHTML = feature.properties.label;
 				}
 
 				if (feature.properties.distance > 0) {
@@ -404,7 +405,7 @@
 
 		onAdd: function (map) {
 			var container = L.DomUtil.create('div',
-				'leaflet-geocoderui-control leaflet-bar leaflet-control');
+					'leaflet-geocoderui-control leaflet-bar leaflet-control');
 
 			this._body = document.body || document.getElementsByTagName('body')[0];
 			this._container = container;
@@ -438,259 +439,259 @@
 			}
 
 			L.DomEvent
-				.on(this._container, 'click', function (e) {
-					// Other listeners should call stopProgation() to
-					// prevent this from firing too greedily
-					this._input.focus();
-				}, this)
-				.on(this._input, 'focus', function (e) {
-					if (this._input.value) {
-						this._results.style.display = 'block';
-					}
-				}, this)
-				.on(this._map, 'click', function (e) {
-					// Does what you might expect a _input.blur() listener might do,
-					// but since that would fire for any reason (e.g. clicking a result)
-					// what you really want is to blur from the control by listening to clicks on the map
-					this.clear();
-				}, this)
-				.on(this._map, 'locationfound', function (e) {
-					this._execute(this.geocoder.near, {
-						lat: e.latlng.lat,
-						lon: e.latlng.lng,
-						accuracy: e.accuracy
-					});
-				}, this)
-				.on(this._map, 'locationerror', function (err) {
-					// this event is called in case of any location error
-					// that is not a time out error.
-					alert(err.message);
-				}, this)
-				.on(this._locate, 'click', function (e) {
-					this._map.locate({
-						watch: false,
-						setView: false,
-						timeout: 10000,
-						enableHighAccuracy: true
-					});
-				}, this)
-				.on(this._search, 'click', function (e) {
-					L.DomEvent.stopPropagation(e);
-
-					// If expanded option is true, just focus the input
-					if (this.options.expanded === true) {
+					.on(this._container, 'click', function (e) {
+						// Other listeners should call stopProgation() to
+						// prevent this from firing too greedily
 						this._input.focus();
-						return;
-					}
+					}, this)
+					.on(this._input, 'focus', function (e) {
+						if (this._input.value) {
+							this._results.style.display = 'block';
+						}
+					}, this)
+					.on(this._map, 'click', function (e) {
+						// Does what you might expect a _input.blur() listener might do,
+						// but since that would fire for any reason (e.g. clicking a result)
+						// what you really want is to blur from the control by listening to clicks on the map
+						this.clear();
+					}, this)
+					.on(this._map, 'locationfound', function (e) {
+						this._execute(this.geocoder.near, {
+							lat: e.latlng.lat,
+							lon: e.latlng.lng,
+							accuracy: e.accuracy
+						});
+					}, this)
+					.on(this._map, 'locationerror', function (err) {
+						// this event is called in case of any location error
+						// that is not a time out error.
+						alert(err.message);
+					}, this)
+					.on(this._locate, 'click', function (e) {
+						this._map.locate({
+							watch: false,
+							setView: false,
+							timeout: 10000,
+							enableHighAccuracy: true
+						});
+					}, this)
+					.on(this._search, 'click', function (e) {
+						L.DomEvent.stopPropagation(e);
 
-					// Toggles expanded state of container on click of search icon
-					if (L.DomUtil.hasClass(this._container, 'leaflet-geocoderui-expanded')) {
-						L.DomUtil.addClass(this._close, 'leaflet-geocoderui-hidden');
-						this.collapse();
-						this._input.blur();
-					} else {
+						// If expanded option is true, just focus the input
+						if (this.options.expanded === true) {
+							this._input.focus();
+							return;
+						}
+
+						// Toggles expanded state of container on click of search icon
+						if (L.DomUtil.hasClass(this._container, 'leaflet-geocoderui-expanded')) {
+							L.DomUtil.addClass(this._close, 'leaflet-geocoderui-hidden');
+							this.collapse();
+							this._input.blur();
+						} else {
+							if (this._input.value.length > 0) {
+								L.DomUtil.removeClass(this._close, 'leaflet-geocoderui-hidden');
+							}
+							this.expand();
+							this._input.focus();
+						}
+					}, this)
+					.on(this._close, 'click', function (e) {
+						this.resetInput();
+						this.clearResults();
+						L.DomEvent.stopPropagation(e);
+					}, this)
+					.on(this._input, 'keydown', function (e) {
+						var list = this._results.querySelectorAll('.leaflet-geocoderui-result');
+						var selected = this._results.querySelectorAll('.leaflet-geocoderui-selected')[0];
+						var selectedPosition;
+						var self = this;
+						var panToPoint = function (shouldPan) {
+							var _selected = self._results.querySelectorAll('.leaflet-geocoderui-selected')[0];
+							if (_selected && shouldPan) {
+								self.showMarker(_selected.feature);
+							}
+						};
+
+						var scrollSelectedResultIntoView = function () {
+							var _selected = self._results.querySelectorAll('.leaflet-geocoderui-selected')[0];
+							var _selectedRect = _selected.getBoundingClientRect();
+							var _resultsRect = self._results.getBoundingClientRect();
+							// Is the selected element not visible?
+							if (_selectedRect.bottom > _resultsRect.bottom) {
+								self._results.scrollTop = _selected.offsetTop + _selected.offsetHeight - self._results.offsetHeight;
+							} else if (_selectedRect.top < _resultsRect.top) {
+								self._results.scrollTop = _selected.offsetTop;
+							}
+						};
+
+						for (var i = 0; i < list.length; i++) {
+							if (list[i] === selected) {
+								selectedPosition = i;
+								break;
+							}
+						}
+
+						// TODO cleanup
+						switch (e.keyCode) {
+							// 13 = enter
+							case 13:
+								if (selected) {
+									this.selectEntry(selected);
+								} else {
+									// perform a full text search on enter
+									var text = (e.target || e.srcElement).value;
+									this.search(text);
+								}
+								L.DomEvent.preventDefault(e);
+								break;
+							// 38 = up arrow
+							case 38:
+								// Ignore key if there are no results or if list is not visible
+								if (!list || this._results.style.display === 'none') {
+									return;
+								}
+
+								if (selected) {
+									L.DomUtil.removeClass(selected, 'leaflet-geocoderui-selected');
+								}
+
+								var previousItem = list[selectedPosition - 1];
+
+								if (selected && previousItem) {
+									L.DomUtil.addClass(previousItem, 'leaflet-geocoderui-selected');
+								} else {
+									L.DomUtil.addClass(list[list.length - 1], 'leaflet-geocoderui-selected');
+								}
+
+								scrollSelectedResultIntoView();
+								panToPoint(this.options.panToPoint);
+
+								L.DomEvent.preventDefault(e);
+								break;
+							// 40 = down arrow
+							case 40:
+								// Ignore key if there are no results or if list is not visible
+								if (!list || this._results.style.display === 'none') {
+									return;
+								}
+
+								if (selected) {
+									L.DomUtil.removeClass(selected, 'leaflet-geocoderui-selected');
+								}
+
+								var nextItem = list[selectedPosition + 1];
+
+								if (selected && nextItem) {
+									L.DomUtil.addClass(nextItem, 'leaflet-geocoderui-selected');
+								} else {
+									L.DomUtil.addClass(list[0], 'leaflet-geocoderui-selected');
+								}
+
+								scrollSelectedResultIntoView();
+								panToPoint(this.options.panToPoint);
+
+								L.DomEvent.preventDefault(e);
+								break;
+							// all other keys
+							default:
+								break;
+						}
+					}, this)
+					.on(this._input, 'keyup', function (e) {
+						var key = e.which || e.keyCode;
+						var text = (e.target || e.srcElement).value;
+
 						if (this._input.value.length > 0) {
 							L.DomUtil.removeClass(this._close, 'leaflet-geocoderui-hidden');
+						} else {
+							L.DomUtil.addClass(this._close, 'leaflet-geocoderui-hidden');
 						}
-						this.expand();
-						this._input.focus();
-					}
-				}, this)
-				.on(this._close, 'click', function (e) {
-					this.resetInput();
-					this.clearResults();
-					L.DomEvent.stopPropagation(e);
-				}, this)
-				.on(this._input, 'keydown', function (e) {
-					var list = this._results.querySelectorAll('.leaflet-geocoderui-result');
-					var selected = this._results.querySelectorAll('.leaflet-geocoderui-selected')[0];
-					var selectedPosition;
-					var self = this;
-					var panToPoint = function (shouldPan) {
-						var _selected = self._results.querySelectorAll('.leaflet-geocoderui-selected')[0];
-						if (_selected && shouldPan) {
-							self.showMarker(_selected.feature);
-						}
-					};
 
-					var scrollSelectedResultIntoView = function () {
-						var _selected = self._results.querySelectorAll('.leaflet-geocoderui-selected')[0];
-						var _selectedRect = _selected.getBoundingClientRect();
-						var _resultsRect = self._results.getBoundingClientRect();
-						// Is the selected element not visible?
-						if (_selectedRect.bottom > _resultsRect.bottom) {
-							self._results.scrollTop = _selected.offsetTop + _selected.offsetHeight - self._results.offsetHeight;
-						} else if (_selectedRect.top < _resultsRect.top) {
-							self._results.scrollTop = _selected.offsetTop;
+						// Ignore all further action if the keycode matches an arrow
+						// key (handled via keydown event)
+						if (key === 13 || key === 38 || key === 40) {
+							return;
 						}
-					};
 
-					for (var i = 0; i < list.length; i++) {
-						if (list[i] === selected) {
-							selectedPosition = i;
-							break;
+						// keyCode 27 = esc key (esc should clear results)
+						if (key === 27) {
+							// If input is blank or results have already been cleared
+							// (perhaps due to a previous 'esc') then pressing esc at
+							// this point will blur from input as well.
+							if (text.length === 0 || this._results.style.display === 'none') {
+								this._input.blur();
+
+								if (L.DomUtil.hasClass(this._container, 'leaflet-geocoderui-expanded')) {
+									this.collapse();
+									this.clearResults();
+								}
+							}
+							// Clears results
+							this._results.innerHTML = '';
+							this._results.style.display = 'none';
+							L.DomUtil.removeClass(this._search, 'leaflet-geocoderui-loading');
+							return;
 						}
-					}
 
-					// TODO cleanup
-					switch (e.keyCode) {
-						// 13 = enter
-						case 13:
-							if (selected) {
-								this.selectEntry(selected);
+						if (this._input.value !== this._lastValue) {
+							this._lastValue = this._input.value;
+
+							if (text.length >= this.options.minimumAutoCompleteInput && this.options.autocomplete === true) {
+								this.autocomplete(text);
 							} else {
-								// perform a full text search on enter
-								var text = (e.target || e.srcElement).value;
-								this.search(text);
-							}
-							L.DomEvent.preventDefault(e);
-							break;
-						// 38 = up arrow
-						case 38:
-							// Ignore key if there are no results or if list is not visible
-							if (!list || this._results.style.display === 'none') {
-								return;
-							}
-
-							if (selected) {
-								L.DomUtil.removeClass(selected, 'leaflet-geocoderui-selected');
-							}
-
-							var previousItem = list[selectedPosition - 1];
-
-							if (selected && previousItem) {
-								L.DomUtil.addClass(previousItem, 'leaflet-geocoderui-selected');
-							} else {
-								L.DomUtil.addClass(list[list.length - 1], 'leaflet-geocoderui-selected');
-							}
-
-							scrollSelectedResultIntoView();
-							panToPoint(this.options.panToPoint);
-
-							L.DomEvent.preventDefault(e);
-							break;
-						// 40 = down arrow
-						case 40:
-							// Ignore key if there are no results or if list is not visible
-							if (!list || this._results.style.display === 'none') {
-								return;
-							}
-
-							if (selected) {
-								L.DomUtil.removeClass(selected, 'leaflet-geocoderui-selected');
-							}
-
-							var nextItem = list[selectedPosition + 1];
-
-							if (selected && nextItem) {
-								L.DomUtil.addClass(nextItem, 'leaflet-geocoderui-selected');
-							} else {
-								L.DomUtil.addClass(list[0], 'leaflet-geocoderui-selected');
-							}
-
-							scrollSelectedResultIntoView();
-							panToPoint(this.options.panToPoint);
-
-							L.DomEvent.preventDefault(e);
-							break;
-						// all other keys
-						default:
-							break;
-					}
-				}, this)
-				.on(this._input, 'keyup', function (e) {
-					var key = e.which || e.keyCode;
-					var text = (e.target || e.srcElement).value;
-
-					if (this._input.value.length > 0) {
-						L.DomUtil.removeClass(this._close, 'leaflet-geocoderui-hidden');
-					} else {
-						L.DomUtil.addClass(this._close, 'leaflet-geocoderui-hidden');
-					}
-
-					// Ignore all further action if the keycode matches an arrow
-					// key (handled via keydown event)
-					if (key === 13 || key === 38 || key === 40) {
-						return;
-					}
-
-					// keyCode 27 = esc key (esc should clear results)
-					if (key === 27) {
-						// If input is blank or results have already been cleared
-						// (perhaps due to a previous 'esc') then pressing esc at
-						// this point will blur from input as well.
-						if (text.length === 0 || this._results.style.display === 'none') {
-							this._input.blur();
-
-							if (L.DomUtil.hasClass(this._container, 'leaflet-geocoderui-expanded')) {
-								this.collapse();
 								this.clearResults();
 							}
 						}
-						// Clears results
-						this._results.innerHTML = '';
-						this._results.style.display = 'none';
-						L.DomUtil.removeClass(this._search, 'leaflet-geocoderui-loading');
-						return;
-					}
+					}, this)
+					.on(this._results, 'click', function (e) {
+						L.DomEvent.preventDefault(e);
+						L.DomEvent.stopPropagation(e);
 
-					if (this._input.value !== this._lastValue) {
-						this._lastValue = this._input.value;
-
-						if (text.length >= this.options.minimumAutoCompleteInput && this.options.autocomplete === true) {
-							this.autocomplete(text);
-						} else {
-							this.clearResults();
+						var _selected = this._results.querySelectorAll('.leaflet-geocoderui-selected')[0];
+						if (_selected) {
+							L.DomUtil.removeClass(_selected, 'leaflet-geocoderui-selected');
 						}
-					}
-				}, this)
-				.on(this._results, 'click', function (e) {
-					L.DomEvent.preventDefault(e);
-					L.DomEvent.stopPropagation(e);
 
-					var _selected = this._results.querySelectorAll('.leaflet-geocoderui-selected')[0];
-					if (_selected) {
-						L.DomUtil.removeClass(_selected, 'leaflet-geocoderui-selected');
-					}
-
-					var selected = e.target || e.srcElement;
-					/* IE8 */
-					var findParent = function () {
-						if (!L.DomUtil.hasClass(selected, 'leaflet-geocoderui-result')) {
-							selected = selected.parentElement;
-							if (selected) {
-								findParent();
+						var selected = e.target || e.srcElement;
+						/* IE8 */
+						var findParent = function () {
+							if (!L.DomUtil.hasClass(selected, 'leaflet-geocoderui-result')) {
+								selected = selected.parentElement;
+								if (selected) {
+									findParent();
+								}
 							}
+							return selected;
+						};
+
+						// click event can be registered on the child nodes
+						// that does not have the required coords prop
+						// so its important to find the parent.
+						findParent();
+
+						// If nothing is selected, (e.g. it's a message, not a result),
+						// do nothing.
+						if (selected) {
+							L.DomUtil.addClass(selected, 'leaflet-geocoderui-selected');
+							this.selectEntry(selected);
 						}
-						return selected;
-					};
-
-					// click event can be registered on the child nodes
-					// that does not have the required coords prop
-					// so its important to find the parent.
-					findParent();
-
-					// If nothing is selected, (e.g. it's a message, not a result),
-					// do nothing.
-					if (selected) {
-						L.DomUtil.addClass(selected, 'leaflet-geocoderui-selected');
-						this.selectEntry(selected);
-					}
-				}, this)
-				.on(this._results, 'mouseover', function (e) {
-					// Prevent scrolling over results list from zooming the map, if enabled
-					this._scrollWheelZoomEnabled = map.scrollWheelZoom.enabled();
-					if (this._scrollWheelZoomEnabled) {
-						map.scrollWheelZoom.disable();
-					}
-				}, this)
-				.on(this._results, 'mouseout', function (e) {
-					// Re-enable scroll wheel zoom (if previously enabled) after
-					// leaving the results box
-					if (this._scrollWheelZoomEnabled) {
-						map.scrollWheelZoom.enable();
-					}
-				}, this);
+					}, this)
+					.on(this._results, 'mouseover', function (e) {
+						// Prevent scrolling over results list from zooming the map, if enabled
+						this._scrollWheelZoomEnabled = map.scrollWheelZoom.enabled();
+						if (this._scrollWheelZoomEnabled) {
+							map.scrollWheelZoom.disable();
+						}
+					}, this)
+					.on(this._results, 'mouseout', function (e) {
+						// Re-enable scroll wheel zoom (if previously enabled) after
+						// leaving the results box
+						if (this._scrollWheelZoomEnabled) {
+							map.scrollWheelZoom.enable();
+						}
+					}, this);
 
 			// Recalculate width of the input bar when window resizes
 			if (this.options.fullWidth) {
