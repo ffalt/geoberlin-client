@@ -308,7 +308,7 @@
 		showMarker: function (feature) {
 
 			if (this.options.onMarkResult) {
-				if (this.options.onMarkResult(feature)) return;
+				if (this.options.onMarkResult(feature)) return true;
 			}
 
 			this.removeMarkers();
