@@ -170,7 +170,7 @@
 					return caller.showMessage(errmsg);
 				}
 				if (results && results.features) {
-					caller.showResults(results.features)
+					caller.showResults(results.features, results.geocoding);
 				}
 			});
 			L.DomUtil.addClass(this._search, 'leaflet-geocoderui-loading');
@@ -230,10 +230,10 @@
 			}
 		},
 
-		showResults: function (features) {
+		showResults: function (features, headers) {
 
 			if (this.options.onResults) {
-				if (this.options.onResults(features)) return;
+				if (this.options.onResults(features, headers)) return;
 			}
 			// Exit function if there are no features
 			if (features.length === 0) {
